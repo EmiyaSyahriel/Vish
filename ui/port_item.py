@@ -24,6 +24,33 @@ class PortItem(QGraphicsPathItem):
         self.setToolTip(self.port.tooltip)
 
         self.highlight = False
+    
+    def get_color(self) -> QColor:
+        port_type = getattr(self.port, "type", None) or getattr(self.port, "port_type", None)
+        style = PORT_STYLES.get(port_type)
+        if style:
+            return QColor(style.color)
+        return QColor("#95A5A6")  
+
+    def generate_path(self, port: Port, style: PortStyle) -> QPainterPath:
+        retval = QPainterPath()
+        match port.port_type:
+            # Exec: triangular arrow
+            case PortType.EXEC:
+                half = style.size / 2
+                retval.moveTo(-half, -half)
+                retval.lineTo(0, -half)
+                retval.lineTo(half, 0)
+                retval.lineTo(0, half)
+                retval.lineTo(-half, half)
+                retval.closeSubpath()
+            # Default path
+            case _:
+                half = style.size / 2
+                retval.addEllipse(-half, -half, style.size, style.size)
+                retval.closeSubpath()
+
+        return retval
 
     def generate_path(self, port: Port, style: PortStyle) -> QPainterPath:
         retval = QPainterPath()

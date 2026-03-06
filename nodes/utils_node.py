@@ -6,7 +6,7 @@ from nodes.registry import register_node
 @register_node("to_string", category="Conversion", label="To String")
 class ToString(BaseNode):
     def __init__(self):
-        super().__init__("to_string", "To String", "#9B59B6")
+        super().__init__("to_string", "To String")
         self.add_input("Input", PortType.INT, "Value to convert to string")
         self.add_output("Output", PortType.VARIABLE, "String representation")
 
@@ -23,7 +23,7 @@ class ToString(BaseNode):
 @register_node("to_int", category="Conversion", label="To Int")
 class ToInt(BaseNode):
     def __init__(self):
-        super().__init__("to_int", "To Int", "#9B59B6")
+        super().__init__("to_int", "To Int")
         self.add_input("Input", PortType.VARIABLE, "Value to convert to integer")
         self.add_output("Output", PortType.INT, "Integer representation")
         
@@ -40,10 +40,10 @@ class ToInt(BaseNode):
 @register_node("sleep", category="Utilities", label="Sleep", description="Pauses execution for a specified duration")
 class SleepNode(BaseNode):
     def __init__(self):
-        super().__init__("sleep", "Sleep", "#E67E22")
-        self.add_input("Exec", PortType.EXEC)
+        super().__init__("sleep", "Sleep")
+        self.add_input("Exec", PortType.EXEC, "Control flow input")
         self.add_input("Duration", PortType.INT, "Duration to sleep in seconds")
-        self.add_output("Exec", PortType.EXEC)
+        self.add_output("Exec", PortType.EXEC, "Control flow output")
         self.properties["duration"] = 1
 
     def emit_bash(self, context: BashContext) -> str:
@@ -59,9 +59,9 @@ class SleepNode(BaseNode):
 @register_node("download_file", category="Utilities", label="Download File", description="Downloads a file from a specified URL")
 class DownloadFileNode(BaseNode):
     def __init__(self):
-        super().__init__("download_file", "Download File", "#1ABC9C")
-        self.add_input("Exec", PortType.EXEC)
-        self.add_output("Exec", PortType.EXEC)
+        super().__init__("download_file", "Download File")
+        self.add_input("Exec", PortType.EXEC, "Control flow input")
+        self.add_output("Exec", PortType.EXEC, "Control flow output")
         self.properties["url"] = ""
         self.properties["output_path"] = ""
 
@@ -74,9 +74,9 @@ class DownloadFileNode(BaseNode):
 @register_node("git_clone", category="Utilities", label="Git Clone", description="Clones a Git repository to a specified destination")
 class GitCloneNode(BaseNode):
     def __init__(self):
-        super().__init__("git_clone", "Git Clone", "#3498DB")
-        self.add_input("Exec", PortType.EXEC)        
-        self.add_output("Exec", PortType.EXEC)
+        super().__init__("git_clone", "Git Clone")
+        self.add_input("Exec", PortType.EXEC, "Control flow input")        
+        self.add_output("Exec", PortType.EXEC, "Control flow output")
         self.properties["repo_url"] = ""
         self.properties["destination_path"] = ""
 
@@ -91,9 +91,9 @@ class GitCloneNode(BaseNode):
 @register_node("open_website", category="Utilities", label="Open Website", description="Opens a specified URL in the default web browser")  
 class OpenWebsiteNode(BaseNode):
     def __init__(self):
-        super().__init__("open_website", "Open Website", "#8E44AD")
-        self.add_input("Exec", PortType.EXEC)
-        self.add_output("Exec", PortType.EXEC)
+        super().__init__("open_website", "Open Website")
+        self.add_input("Exec", PortType.EXEC, "Control flow input")
+        self.add_output("Exec", PortType.EXEC, "Control flow output")
         self.properties["url"] = ""
 
     def emit_bash(self, context: BashContext) -> str:

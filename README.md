@@ -10,14 +10,14 @@ Vish is a graphical editor for creating and managing Bash scripts using a node-b
 - Save and load visual scripts in JSON format
 - Various user friendly features to enhance the scripting experience
 - Themes support (Light/Dark/Purple)
-- Translation support (English/French/Spanish)
+- Multi-language support
 - Settings to customize the editor behavior and appearance
 - Partial Windows support (some features may be limited or unavailable on Windows)
 
 ## Screenshots
 
-![Screenshot1](screenshots/screenshot1.png)
-![Screenshot2](screenshots/screenshot2.png)
+<img width="3072" height="1664" alt="Screenshot of Vish showing nodes and generated bash script with a script that call function that print the license file" src="https://github.com/Lluciocc/vish-utils/blob/main/screenshots/screenshots1.png" />
+<img width="3072" height="1728" alt="Screenshot of Vish showing nodes and generated bash script with a simple script that tell if a number is odd or even" src="https://github.com/Lluciocc/vish-utils/blob/main/screenshots/screenshots2.png" />
 
 ## Notes
 
@@ -25,9 +25,13 @@ Vish is made for educational purposes and to simplify the process of creating Ba
 It can help beginners understand the structure and flow of Bash scripts, making it easier to learn scripting concepts.
 
 ## Wiki
-For more detailed information about Vish, including installation instructions, usage guides, and troubleshooting tips, please visit the [Wiki](https://github.com/lluciocc/vish/wiki).
+For more detailed information about Vish, including contribution instructions, usage guides, and troubleshooting tips, please visit the [Wiki](https://github.com/lluciocc/vish/wiki).
 
 ## Installation
+### From Flathub
+You can install Vish directly from Flathub:
+https://flathub.org/apps/io.github.lluciocc.Vish
+
 ### From flatpak
 You can install Vish from a self hosted source using the following command:
 ```bash 
@@ -40,35 +44,8 @@ chmod +x Vish-*.AppImage
 ./Vish-*.AppImage
 ```
 
-## Contributing
-### Coding
-Contributions are welcome! If you would like to contribute to Vish, please follow these steps:
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature-branch`)
-3. Make your changes and commit them (`git commit -am 'Add new feature'`)
-4. Push to the branch (`git push origin feature-branch`)
-5. Create a new Pull Request
-
-Note: Please ensure your code adheres to the existing coding style and includes appropriate tests.- This project is in active development. Features may change, and bugs may be present.
-
-### Translating
-An other way to contribute Vish is to help translating it in other languages. If you want to contribute to the translation of Vish, please follow these steps:
-1. Fork the repository
-2. Create a new branch (`git checkout -b translation-branch`)
-3. Create a new translation file in `assets/model/{language}.json` to add translations for the new language you want to add. **You can use the existing translations as a reference.**
-4. Commit your changes (`git commit -am 'Add translation for [Language]'`)
-5. Push to the branch (`git push origin translation-branch`)
-6. Create a new Pull Request
-
 ## Credits
-- Developed by Lluciocc
-- Inspired by Unreal Engine's Blueprint system
-- Every icon are from [Pictogrammers](https://pictogrammers.com/library/mdi/)
-- ANSI to HTML conversion code inspired from [ansi-to-html](https://github.com/pycontribs/ansi2html)
-- Some style inspired from TheGnomeProject's Adwaita theme
-- Thanks to the PySide6 documentation [https://doc.qt.io/qtforpython/](https://doc.qt.io/qtforpython/)
-- Thanks [Alan Bork](alanbork@gmail.com) for his help for founding the icons 
-- Xelu's assets for [keyboard icons](https://thoseawesomeguys.com/prompts)
+You can find the list of contributors and acknowledgements in the [CREDITS file](assets/markdown/CREDITS.md).
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details
+This project is licensed under the MIT License. See the [LICENSE file](LICENSE) for details

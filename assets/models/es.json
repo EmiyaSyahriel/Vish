@@ -18,9 +18,7 @@
     "theme_dark": "Oscuro",
     "theme_purple": "Púrpura",
     "theme_white": "Claro",
-    "lang_en": "Inglés",
-    "lang_fr": "Francés",
-    "lang_es": "Español",
+    "theme_breeze_dark": "Brisa oscuro",
 
     "about": "Acerca de",
     "settings": "Configuración",
@@ -33,6 +31,7 @@
     "sync_nodes_and_gen": "Sincronizar nodos y generación",
     "auto_save": "Guardado automático",
     "custom_shebang": "Shebang personalizado",
+    "full_screen": "Pantalla completa",
     "close": "Cerrar",
 
     "app_name": "Visual Bash Editor",

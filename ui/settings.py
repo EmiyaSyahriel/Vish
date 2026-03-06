@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt, QPropertyAnimation, Property, Signal
 from PySide6.QtGui import QPainter, QColor
 from core.config import Config, ConfigManager
 from core.traduction import Traduction
-from theme.theme import set_dark_theme, set_purple_theme, set_white_theme
+from theme.theme import set_dark_theme, set_purple_theme, set_white_theme, set_breeze_dark_theme
 from ui.menu_style import apply_menu_style, apply_btn_style
 
 def set_config_bool(attr_name: str, value: bool):
@@ -82,6 +82,9 @@ class SettingsDialog(QDialog):
         self.theme_combo.addItem(
             Traduction.get_trad("theme_white", "White"), "white"
         )
+        self.theme_combo.addItem(
+            Traduction.get_trad("theme_breeze_dark", "Breeze Dark"), "breeze_dark"
+        )
 
         self.theme_combo.setCurrentIndex(
             self.theme_combo.findData(Config.theme)
@@ -107,13 +110,22 @@ class SettingsDialog(QDialog):
 
         self.lang_combo = QComboBox()
         self.lang_combo.addItem(
-            Traduction.get_trad("lang_en", "English"), "en"
+            "English", "en"
         )
         self.lang_combo.addItem(
-            Traduction.get_trad("lang_fr", "French"), "fr"
+            "Francais", "fr"
         )
         self.lang_combo.addItem(
-            Traduction.get_trad("lang_es", "Spanish"), "es"
+            "Español", "es"
+        )
+        self.lang_combo.addItem(
+            "العربية", "ar"
+        )
+        self.lang_combo.addItem(
+            "Italiano", "it"
+        )
+        self.lang_combo.addItem(
+            "Deutsch", "de"
         )
 
         self.lang_combo.setCurrentIndex(
@@ -196,6 +208,8 @@ class SettingsDialog(QDialog):
             set_purple_theme()
         elif theme == "white":
             set_white_theme()
+        elif theme == "breeze_dark":
+            set_breeze_dark_theme()
 
         if self.parent():
             self.parent().graph_view.apply_theme()
@@ -242,6 +256,11 @@ class SettingsDialog(QDialog):
         Config.CUSTOM_SHEBANG = new_value
         ConfigManager.save_config()
 
+    def update_combo_item(self, combo, data, key, fallback):
+        index = combo.findData(data)
+        if index != -1:
+            combo.setItemText(index, Traduction.get_trad(key, fallback))
+
     def refresh_ui_texts(self):
         self.setWindowTitle(
             Traduction.get_trad("settings", "Settings")
@@ -283,6 +302,11 @@ class SettingsDialog(QDialog):
         self.shebang_label.setText(
             Traduction.get_trad("custom_shebang", "Custom Shebang")
         )
+
+        self.update_combo_item(self.theme_combo, "dark", "theme_dark", "Dark")
+        self.update_combo_item(self.theme_combo, "purple", "theme_purple", "Purple")
+        self.update_combo_item(self.theme_combo, "white", "theme_white", "White")
+        self.update_combo_item(self.theme_combo, "breeze_dark", "theme_breeze_dark", "Breeze Dark")
 
         if self.parent():
             self.parent().refresh_ui_texts()

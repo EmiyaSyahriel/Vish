@@ -7,17 +7,48 @@ from nodes.base_node import BaseNode
 @register_node("start", category="Flow", label="Start", description="The starting point of the flow")
 class StartNode(BaseNode):
     def __init__(self):
-        super().__init__("start", "Start", "#4A90E2")
+        super().__init__("start", "Start")
         self.add_output("Exec", PortType.EXEC, "Start of the flow")
     
     def emit_bash(self, context: BashContext) -> str:
         return ""
 
+@register_node("sequencer",category="Flow",label="Sequencer",description="Executes connected nodes sequentially from top to bottom")
+class SequencerNode(BaseNode):
+    def __init__(self):
+        super().__init__("sequencer", "Sequencer")
+
+        self.add_input("Exec", PortType.EXEC, "Control flow input")
+
+        self.add_output("Step 1", PortType.EXEC, "First execution step")
+        self.add_output("Step 2", PortType.EXEC, "Second execution step")
+        self.add_output("Step 3", PortType.EXEC, "Third execution step")
+
+        self.properties["DYNAMIC_add_output_dynamic"] = ""
+        self.properties["DYNAMIC_remove_output_dynamic"] = ""
+
+    def add_output_dynamic(self):
+        self.add_output(f"Step {len(self.outputs)+1}", PortType.EXEC, "")
+
+    def remove_output_dynamic(self):
+        if len(self.outputs) <= 3:
+            Debug.Error('Cannot have less than 3 outputs')
+        else:
+            self.outputs.pop(-1)
+
+    def emit_bash(self, context: BashContext) -> str:
+        for output in self.outputs:
+            if output.connected_edges:
+                next_node = output.connected_edges[0].target.node
+                BaseNode.emit_exec_chain(next_node, context)
+
+        return ""
+
 @register_node("if", category="Flow", label="If Condition", description="Evaluates a condition and branches the flow")
 class IfNode(BaseNode):
     def __init__(self):
-        super().__init__("if", "If", "#E94B3C")
-        self.add_input("Exec", PortType.EXEC)
+        super().__init__("if", "If")
+        self.add_input("Exec", PortType.EXEC, "Control flow input")
         self.add_input("Condition", PortType.CONDITION, "Condition to evaluate")
         self.add_output("True", PortType.EXEC, "If condition is true")
         self.add_output("False", PortType.EXEC, "If condition is false")
@@ -62,9 +93,9 @@ class IfNode(BaseNode):
 @register_node("for", category="Flow", label="For Loop", description="Iterates over a list")
 class ForNode(BaseNode):
     def __init__(self):
-        super().__init__("for", "For Loop", "#9B59B6")
+        super().__init__("for", "For Loop")
 
-        self.add_input("Exec", PortType.EXEC)
+        self.add_input("Exec", PortType.EXEC, "Control flow input")
         self.add_input("List", PortType.STRING, "List to iterate over")
 
         self.add_output("Loop Body", PortType.EXEC, "Executed for each item")
@@ -102,9 +133,9 @@ class ForNode(BaseNode):
 @register_node("while", category="Flow", label="While Loop", description="Repeats execution while a condition is true")
 class WhileNode(BaseNode):
     def __init__(self):
-        super().__init__("while", "While", "#8E44AD")
-        self.add_input("Exec", PortType.EXEC)
-        self.add_input("Condition", PortType.CONDITION)
+        super().__init__("while", "While")
+        self.add_input("Exec", PortType.EXEC, "Control flow input")
+        self.add_input("Condition", PortType.CONDITION, "Loop Condition")
         self.add_output("Body", PortType.EXEC, "Loop body")
         self.add_output("Next", PortType.EXEC, "Continue after loop")
 
@@ -143,7 +174,7 @@ class WhileNode(BaseNode):
 @register_node("function", category="Flow", label="Function", description="Defines a bash function")
 class FunctionNode(BaseNode):
     def __init__(self):
-        super().__init__("function", "Function", "#1ABC9C")
+        super().__init__("function", "Function")
         self.add_output("Exec", PortType.EXEC, "Function body")
 
         self.properties["name"] = "my_function"
@@ -173,10 +204,10 @@ class FunctionNode(BaseNode):
 @register_node("call",category="Flow",label="Call Function",description="Calls a bash function")
 class CallNode(BaseNode):
     def __init__(self):
-        super().__init__("call", "Call", "#F39C12")
+        super().__init__("call", "Call")
 
-        self.add_input("Exec", PortType.EXEC)
-        self.add_output("Exec", PortType.EXEC)
+        self.add_input("Exec", PortType.EXEC, "Control flow input")
+        self.add_output("Exec", PortType.EXEC, "Control flow output")
 
         self.properties["function"] = "my_function"
 
@@ -186,9 +217,9 @@ class CallNode(BaseNode):
 @register_node("return", category="Flow", label="Return", description="Return the result of a fonction")
 class ReturnNode(BaseNode):
     def __init__(self):
-        super().__init__("return", "Return", "#E74C3C")
-        self.add_input("Exec", PortType.EXEC)
-        self.add_input("Value", PortType.STRING)
+        super().__init__("return", "Return")
+        self.add_input("Exec", PortType.EXEC, "Control flow input")
+        self.add_input("Value", PortType.STRING, "Return value")
 
     def emit_bash(self, context):
         value = "0"

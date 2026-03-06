@@ -18,9 +18,19 @@
     "theme_dark": "Dark",
     "theme_purple": "Purple",
     "theme_white": "White",
-    "lang_en": "English",
-    "lang_fr": "French",
-    "lang_es": "Spanish",
+    "theme_breeze_dark": "Breeze Dark",
+
+    "never_modified": "Never saved",
+    "remove_recent": "Remove from recents",
+    "welcome_title": "Welcome",
+    "welcome_recent_projects": "Recent Projects",
+    "welcome_new_project": "New Project",
+    "welcome_open_project": "Open Project",
+    "no_recent_projects": "No recent projects",
+    "remove_recent_question": "Do you want to remove this project from the recent list?",
+    "new_project_name": "Project Name",
+    "new_project_enter_name": "Enter project name:",
+    "select_project_folder": "Select Project Folder",
 
     "settings": "Settings",
     "appearance": "Appearance",
@@ -32,6 +42,7 @@
     "sync_nodes_and_gen": "Sync Nodes and Generation",
     "auto_save": "Auto Save",
     "custom_shebang": "Custom Shebang",
+    "full_screen": "Full Screen",
     "close": "Close",
 
     "about": "About",
@@ -67,6 +78,7 @@
     "shortcut_comment_box": "Create comment box",
     "shortcut_auto_layout": "Auto layout graph",
     "shortcut_rebuild_graph": "Rebuild graph",
+    "shortcut_frame_all": "Frame all",
 
     "Commands": "Commands",
     "Flow": "Flow",

@@ -28,6 +28,7 @@ class NodeItem(QGraphicsItem):
         self.title_item = QGraphicsTextItem(Traduction.get_trad(node.node_type, node.title), self)
         self.title_item.setDefaultTextColor(QColor("#ECF0F1"))
         self.title_item.setPos(10, 8)
+        self.setZValue(1)
         
         self.setup_icon()
         self.setup_ports()
@@ -82,6 +83,13 @@ class NodeItem(QGraphicsItem):
                 scene.update_edges_for_node(self)
             self.node.x = value.x()
             self.node.y = value.y()
+
+        elif change == QGraphicsItem.ItemSelectedChange and value:
+            scene = self.scene()
+            if scene and hasattr(scene, "_z_counter"):
+                self.setZValue(scene._z_counter)
+                scene._z_counter += 1
+
         return super().itemChange(change, value)
  
     def get_port_scene_pos(self, port_id: str) -> QPointF:
@@ -94,6 +102,11 @@ class NodeItem(QGraphicsItem):
         scene = self.scene()
         if scene:
             scene.node_selected.emit(self.node)
+
+            if hasattr(scene, "_z_counter"):
+                self.setZValue(scene._z_counter)
+                scene._z_counter += 1
+
         super().mousePressEvent(event)
 
     def get_icon_node(self, item: Node):
@@ -133,6 +146,58 @@ class NodeItem(QGraphicsItem):
         text_y = (self.HEADER_HEIGHT - text_rect.height()) / 2
         self.title_item.setPos(x, text_y)
 
+    def rebuild_ports(self):
+        scene = self.scene()
+
+        old_ports = self.port_items.copy()
+
+        for port_item in old_ports.values():
+            if port_item.scene():
+                port_item.scene().removeItem(port_item)
+
+        self.port_items.clear()
+
+        self.prepareGeometryChange()
+
+        self.setup_ports()
+
+        self.height = self.HEADER_HEIGHT + max(
+            len(self.node.inputs) * self.PORT_SPACING,
+            len(self.node.outputs) * self.PORT_SPACING
+        ) + 20
+
+        if scene:
+            for edge_item in list(scene.edges):
+                edge = edge_item.edge
+
+                if edge.source.node.id == self.node.id:
+                    new_port = self.port_items.get(edge.source.id)
+                    if new_port:
+                        edge_item.source_port = new_port
+                    else:
+                        scene.graph.remove_edge(edge.id)
+                        if edge_item.scene():
+                            scene.removeItem(edge_item)
+                        scene.edges.remove(edge_item)
+                        continue
+
+                if edge.target.node.id == self.node.id:
+                    new_port = self.port_items.get(edge.target.id)
+                    if new_port:
+                        edge_item.target_port = new_port
+                    else:
+                        scene.graph.remove_edge(edge.id)
+                        if edge_item.scene():
+                            scene.removeItem(edge_item)
+                        scene.edges.remove(edge_item)
+                        continue
+
+                edge_item.update_positions()
+
+            scene.update_edges_for_node(self)
+
+        self.update()
+            
     # def setup_icon(self):
     #     svg_path = self.get_icon_node(self.node)
     #     padding = 8

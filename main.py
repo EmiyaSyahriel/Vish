@@ -10,14 +10,15 @@ import subprocess
 import time
 from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, 
                                QWidget, QPushButton, QHBoxLayout, QTextEdit,
-                               QSplitter, QFileDialog, QToolButton, QMenu, QDialog)
+                               QSplitter, QFileDialog, QToolButton, QMenu, QDialog,
+                               QMessageBox)
 from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QColor, QKeySequence, QIcon
 from core.graph import Graph
 from core.bash_emitter import BashEmitter
 from core.serializer import Serializer
 from nodes.flow_nodes import StartNode, IfNode, ForNode
-from nodes.command_nodes import RunCommandNode, EchoNode, ExitNode
+from nodes.command_nodes import RunCommandNode, EchoNode, ExitNode, PipeNode
 from nodes.variable_nodes import SetVariableNode, GetVariableNode, FileExistsNode
 from nodes.operation_nodes import Addition
 from nodes.utils_node import ToString
@@ -34,9 +35,10 @@ from core.ansi_to_html import ansi_to_html
 from core.config import Config, ConfigManager
 from core.debug import Info, Debug
 from core.traduction import Traduction
+from core.node_color import NodeColor
 from core.projects import ProjectManager
 from ui.welcome import WelcomeScreen
-from theme.theme import Theme, set_dark_theme, set_purple_theme, set_white_theme
+from theme.theme import Theme, set_dark_theme, set_purple_theme, set_white_theme, set_breeze_dark_theme
 
 class NodeFactory:
     @staticmethod
@@ -66,6 +68,8 @@ class VisualBashEditor(QMainWindow):
             set_purple_theme()
         elif Config.theme == "white":
             set_white_theme()
+        elif Config.theme == "breeze_dark":
+            set_breeze_dark_theme()
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
@@ -73,23 +77,28 @@ class VisualBashEditor(QMainWindow):
 
         self.generate_btn = QPushButton(Traduction.get_trad("btn_generate_bash", "Generate Bash"))
         self.generate_btn.clicked.connect(self.generate_bash)
+        apply_icon_for_btn(self.generate_btn, "generate")
         toolbar.addWidget(self.generate_btn)
 
         self.save_btn = QPushButton(Traduction.get_trad("btn_save", "Save"))
+        apply_icon_for_btn(self.save_btn, "save")
         self.save_btn.clicked.connect(self.save_graph)
         toolbar.addWidget(self.save_btn)
 
         self.load_btn = QPushButton(Traduction.get_trad("btn_load", "Load"))
         self.load_btn.clicked.connect(self.load_graph)
+        apply_icon_for_btn(self.load_btn, "load")
         toolbar.addWidget(self.load_btn)
 
         toolbar.addStretch()
 
         self.run_bash_btn = QPushButton(Traduction.get_trad("btn_run_bash", "Run Bash Script"))
         self.run_bash_btn.clicked.connect(self.run_bash)
+        apply_icon_for_btn(self.run_bash_btn, "play")
         toolbar.addWidget(self.run_bash_btn)
 
         self.copy_btn = QPushButton(Traduction.get_trad("btn_copy_clipboard", "Copy to Clipboard"))
+        apply_icon_for_btn(self.copy_btn, "clipboard")
         self.copy_btn.clicked.connect(
             lambda: QApplication.clipboard().setText(self.output_text.toPlainText())
         )
@@ -116,6 +125,11 @@ class VisualBashEditor(QMainWindow):
         self.keyboard.triggered.connect(self.open_keyboard_shortcuts)
         apply_icon_for_btn(self.keyboard, "keyboard")
 
+        self.full_screenfs = self.more_menu.addAction(
+            Traduction.get_trad("full_screen", "Full Screen")
+        )
+        self.full_screenfs.triggered.connect(self.full_screen_action)
+        apply_icon_for_btn(self.full_screenfs, "fullscreen")
         self.about_action = self.more_menu.addAction(
             Traduction.get_trad("about", "About")
         )
@@ -133,7 +147,7 @@ class VisualBashEditor(QMainWindow):
         self.graph_view = GraphView(self.graph, self)
         splitter.addWidget(self.graph_view)
         
-        self.property_panel = PropertyPanel()
+        self.property_panel = PropertyPanel(graph_view=self.graph_view)
         splitter.addWidget(self.property_panel)
 
         self.output_splitter = QSplitter(Qt.Vertical)
@@ -195,8 +209,26 @@ class VisualBashEditor(QMainWindow):
     def open_about(self):
         AboutDialog(self).exec()
 
+    def full_screen_action(self):
+        if self.windowState() & Qt.WindowState.WindowFullScreen:
+            self.setWindowState(Qt.WindowState.WindowNoState)
+        else:
+            self.setWindowState(Qt.WindowState.WindowFullScreen)
+
     def open_keyboard_shortcuts(self):
         KeyboardShortcutsDialog(self).exec()
+    
+    def open_welcome_screen(self):
+        welcome = WelcomeScreen(self, self.project_manager)
+        if welcome.exec() == QDialog.Accepted:
+            self.load_current_project()
+        else:
+            Debug.Log(
+                Traduction.get_trad(
+                    "no_project_loaded",
+                    "No project loaded. You can create or open a project from the welcome screen."
+                )
+            )
         
     def save_graph(self, msg=True):
         if not self.graph.nodes:
@@ -220,7 +252,7 @@ class VisualBashEditor(QMainWindow):
     
     def load_graph(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Load Graph", "", "JSON Files (*.json)"
+            self, Traduction.get_trad("file_dialog_open", "Load Graph"), "", "JSON Files (*.json)"
         )
         if not file_path:
             Debug.Error(Traduction.get_trad("error_no_file_selected", "No file selected."))
@@ -228,9 +260,16 @@ class VisualBashEditor(QMainWindow):
 
         with open(file_path, "r") as f:
             json_data = f.read()
-
-        self.graph, comments = Serializer.deserialize(json_data, self.node_factory)
-
+        
+        try:
+            self.graph, comments = Serializer.deserialize(json_data, self.node_factory)
+        except ValueError as e:
+            # TODO: CustomExeception Class to not rely on generic class with code base specific behaviour (e.g. "e.args[0][1]")
+            msg_box = QMessageBox()
+            msg_box.setText(f"Project contains unknown node type: '{e.args[0][1]}'\nPlease check if a newer version of this tool is available.")
+            msg_box.setIcon(QMessageBox.Icon.Critical)
+            msg_box.exec()
+            raise
 
         splitter = self.graph_view.parent()
         old_view = self.graph_view
@@ -241,21 +280,16 @@ class VisualBashEditor(QMainWindow):
         old_view.setParent(None)
         old_view.deleteLater()
 
+        self.property_panel.graph_view = self.graph_view
+        
         for node in self.graph.nodes.values():
             self.graph_view.add_node_item(node)
 
         for edge in self.graph.edges.values():
             self.graph_view.graph_scene.add_core_edge(edge, self.graph_view.node_items)
         
-        for c in comments:
-            box = CommentBoxItem(
-                rect=QRectF(0, 0, c["w"], c["h"]),
-                title=c["title"]
-            )
-            box.setPos(c["x"], c["y"])
-            box.setBrush(QColor(*c["color"]))
-            box.set_locked(c.get("locked", False))
-            self.graph_view.scene().addItem(box)
+        for comment in comments:
+            self.load_comment(comment)
 
         self._connect_signals()
         splitter.setSizes([900, 300, 400])
@@ -271,18 +305,29 @@ class VisualBashEditor(QMainWindow):
         with open(graph_path, "r") as f:
             json_data = f.read()
 
-        self.graph, comments = Serializer.deserialize(json_data, self.node_factory)
+        try:
+            self.graph, comments = Serializer.deserialize(json_data, self.node_factory)
+        except ValueError as e:
+            # TODO: CustomExeception Class to not rely on generic class with code base specific behaviour (e.g. "e.args[0][1]")
+            msg_box = QMessageBox()
+            msg_box.setText(f"Project contains unknown node type: '{e.args[0][1]}'\nPlease check if a newer version of this tool is available.")
+            msg_box.setIcon(QMessageBox.Icon.Critical)
+            msg_box.exec()
+            raise
+
 
         splitter = self.graph_view.parent()
         old_view = self.graph_view
 
         self.graph_view = GraphView(self.graph, self)
         splitter.insertWidget(0, self.graph_view)
+        
 
         old_view.setParent(None)
         old_view.deleteLater()
 
         self._connect_signals()
+        self.property_panel.graph_view = self.graph_view
 
         for node in self.graph.nodes.values():
             self.graph_view.add_node_item(node)
@@ -290,7 +335,21 @@ class VisualBashEditor(QMainWindow):
         for edge in self.graph.edges.values():
             self.graph_view.graph_scene.add_core_edge(edge, self.graph_view.node_items)
 
+        for comment in comments:
+            self.load_comment(comment)
+
         splitter.setSizes([900, 300, 400])
+
+    def load_comment(self, comment):
+            box = CommentBoxItem(
+                rect=QRectF(0, 0, comment["w"], comment["h"]),
+                title=comment["title"]
+            )
+            box.setPos(comment["x"], comment["y"])
+            box.setBrush(QColor(*comment["color"]))
+            box.set_locked(comment.get("locked", False))
+            self.graph_view.scene().addItem(box)
+
 
     def auto_save(self):
         if Config.AUTO_SAVE:
@@ -447,6 +506,12 @@ class VisualBashEditor(QMainWindow):
         apply_icon_for_btn(self.settings_action, "settings")
         apply_icon_for_btn(self.about_action, "about")
         apply_icon_for_btn(self.keyboard, "keyboard")
+        apply_icon_for_btn(self.generate_btn, "generate")
+        apply_icon_for_btn(self.load_btn, "load")
+        apply_icon_for_btn(self.run_bash_btn, "play")
+        apply_icon_for_btn(self.copy_btn, "clipboard")
+        apply_icon_for_btn(self.save_btn, "save")
+        apply_icon_for_btn(self.full_screenfs, "fullscreen")
 
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.Save): # Ctrl+S
@@ -457,10 +522,24 @@ class VisualBashEditor(QMainWindow):
             self.generate_bash()
         elif event.key() == Qt.Key_R and event.modifiers() & Qt.ControlModifier: # Ctrl+R
             self.run_bash()
+        elif event.key() == Qt.Key_W and event.modifiers() & Qt.ControlModifier: # Ctrl+W
+            self.open_welcome_screen()
+        elif event.key() == Qt.Key_F11: # F11
+            self.full_screen_action()
+        elif event.key() == Qt.Key_F1: # F1
+            self.open_keyboard_shortcuts()
+        elif event.key() == Qt.Key_F9: # F9
+            self.open_settings()
+        elif event.key() == Qt.Key_Escape: # Esc
+            if self.windowState() & Qt.WindowState.WindowFullScreen:
+                self.setWindowState(Qt.WindowState.WindowNoState)
+
         super().keyPressEvent(event)
 
 def main():
     ConfigManager.load_config() # Load config before setting theme and language
+    # TODO: add user configuration from settings
+    NodeColor.set_node_colors()
     Traduction.set_translate_model(Config.lang)
 
     app = QApplication(sys.argv)
@@ -472,11 +551,7 @@ def main():
     Debug.init(editor)
     editor.show()
 
-    welcome = WelcomeScreen(editor, editor.project_manager)
-    if welcome.exec() == QDialog.Accepted:
-        editor.load_current_project()
-    elif welcome.result() == QDialog.Rejected:
-        Debug.Log(Traduction.get_trad("no_project_loaded", "No project loaded. You can create or open a project from the welcome screen."))
+    editor.open_welcome_screen()
 
     sys.exit(app.exec())
 
